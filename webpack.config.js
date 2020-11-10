@@ -1,4 +1,5 @@
 const HTMLWebPackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const LinkTypePlugin = require("html-webpack-link-type-plugin")
   .HtmlWebpackLinkTypePlugin;
 
@@ -14,11 +15,21 @@ module.exports = {
       },
       {
         test: /\.scss$/,
-        use: ["sass-loader"]
+        use: [
+          {
+            loader: "style-loader" // creates style nodes from JS strings
+          },
+          {
+            loader: "css-loader" // translates CSS into CommonJS
+          },
+          {
+            loader: "sass-loader" // compiles Sass to CSS
+          }
+        ]
       },
       {
-        test: /\.css$/,
-        use: ["style-loader", "css-loader"]
+        test: /\.css$/i,
+        use: [MiniCssExtractPlugin.loader, "css-loader"]
       }
     ]
   },
@@ -30,6 +41,7 @@ module.exports = {
     new LinkTypePlugin({
       "*.css": "text/css",
       "*.js": "text/javascript"
-    })
+    }),
+    new MiniCssExtractPlugin()
   ]
 };
