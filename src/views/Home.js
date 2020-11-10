@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { Card, Col, Menu, Progress, Row, Spin } from "antd";
+import { Card, Col, Row, Select, Spin, Typography } from "antd";
 import {
   MailOutlined,
   AppstoreOutlined,
   SettingOutlined
 } from "@ant-design/icons";
+import { orderBy } from "lodash";
+
+import CampaignItem from "../components/CampaignItem/CampaignItem";
+import CampaignDetail from "../components/CampaignDetail/CampaignDetail";
+
+const { Paragraph, Text } = Typography;
 
 const Home = (props) => {
   const [loading, setLoading] = useState(false);
   const [campaignList, setCampaignList] = useState([]);
+
+  const [showDetail, setShowDetail] = useState(false);
+  const [shownCampaign, setShownCampaign] = useState(null);
+
+  const [sortBy, setSortBy] = useState("donation_target");
 
   useEffect(() => {
     setLoading(true);
@@ -18,7 +29,8 @@ const Home = (props) => {
       .then((resp) => resp.json())
       .then((res) => {
         console.log(res);
-        setCampaignList(res.data);
+        const sortedData = orderBy(res.data, sortBy, "desc");
+        setCampaignList(sortedData);
       })
       .catch((err) => {
         console.log(err);
@@ -28,51 +40,86 @@ const Home = (props) => {
       });
   }, []);
 
+  useEffect(() => {
+    if (campaignList.length) {
+      setLoading(true);
+      setTimeout(() => {
+        const sortedData = orderBy(campaignList, sortBy, "desc");
+        setCampaignList(sortedData);
+        setLoading(false);
+      }, 1000);
+    }
+  }, [sortBy]);
+
+  const getDetail = (id) => {
+    setShowDetail(true);
+    const filtered = campaignList.filter((x) => x.id === id);
+    setShownCampaign(filtered[0]);
+  };
+
+  const closeDetail = () => {
+    setShownCampaign(null);
+    setShowDetail(false);
+  };
+
   return (
     <div>
       <header>
-        <nav className="container">
+        <nav className="container py-3">
           <Row>
-            <Col sm={16}>Kitabisa</Col>
-            <Col sm={8} className="text-right">
-              Sort
+            <Col xs={8} sm={16}>
+              Kitabisa
+            </Col>
+            <Col xs={16} sm={8} className="text-right">
+              <Select
+                disabled={loading}
+                onChange={(e) => setSortBy(e)}
+                value={sortBy}
+              >
+                <Select.Option value="donation_target">
+                  Sort by Donation Target
+                </Select.Option>
+                <Select.Option value="donation_received">
+                  Sort by Donation Received
+                </Select.Option>
+              </Select>
             </Col>
           </Row>
         </nav>
       </header>
       <main>
         <div className="container">
+          <CampaignDetail
+            visible={showDetail}
+            campaignData={shownCampaign}
+            closeHandler={closeDetail}
+          />
           {loading ? (
-            <Spin size="large" />
+            <div className="text-center p-5">
+              <Spin size="large" />
+            </div>
           ) : !loading && campaignList.length ? (
             <Row gutter={12}>
               {campaignList.map((el) => (
                 <Col key={el.id} sm={8}>
-                  <Card
-                    hoverable
-                    cover={<img src={el.image} />}
-                    onClick={() => alert(el.id)}
-                    className="mb-3"
-                  >
-                    {el.title}
-                    <Progress
-                      percent={el.donation_percentage * 100}
-                      showInfo={false}
-                    />
-                    <Row gutter={16}>
-                      <Col sm={16}>
-                        Terkumpul <br /> {el.donation_received}
-                      </Col>
-                      <Col sm={8}>
-                        Sisa Hari <br /> {el.days_remaining}
-                      </Col>
-                    </Row>
-                  </Card>
+                  <CampaignItem
+                    image={el.image}
+                    clickHandler={() => getDetail(el.id)}
+                    title={el.title}
+                    donation_received={el.donation_received}
+                    donation_target={el.donation_target}
+                    donation_percentage={el.donation_percentage}
+                    days_remaining={el.days_remaining}
+                  />
                 </Col>
               ))}
             </Row>
           ) : (
-            "No Data"
+            <div className="text-center p-5">
+              <Paragraph>
+                <Text type="danger">Not Found</Text>
+              </Paragraph>
+            </div>
           )}
         </div>
       </main>

@@ -1,8 +1,7 @@
 import React from "react";
 
 // import styles
-import "bootstrap/dist/css/bootstrap.css";
-import "antd/dist/antd.css";
+import "./assets/style/main.scss";
 
 // import components
 import Home from "./views/Home";
